@@ -103,8 +103,10 @@
             });
 
             window.WebViewJavascriptBridge.registerHandler("functionInJs", function(data, responseCallback) {
+              <!--到这里 java调用js调用完毕-->
                 document.getElementById("show").innerHTML = ("data from Java: = " + data);
                 if (responseCallback) {
+                <!--responseCallback 用于返回数据给java层 调用js中的send方法-->
                     var responseData = "Javascript Says Right back aka!";
                     responseCallback(responseData);
                 }

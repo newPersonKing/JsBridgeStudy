@@ -116,6 +116,7 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 			m.setData(data);
 		}
 		if (responseCallback != null) {
+			//callbackStr==JAVA_CB_1_2327
 			String callbackStr = String.format(BridgeUtil.CALLBACK_ID_FORMAT, ++uniqueId + (BridgeUtil.UNDERLINE_STR + SystemClock.currentThreadTimeMillis()));
 			/*存储 java向h5发送消息时 存储每次的唯一ID与对应的回掉接口*/
 			responseCallbacks.put(callbackStr, responseCallback);
@@ -130,6 +131,8 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
     /**
      * list<message> != null 添加到消息集合否则分发消息
      * @param m Message
+	 * startupMessage不等于null 意思是说要加载的js文件还没加载完毕这里指（WebViewJavascriptBridge.js）
+	 *  如果执行完毕 直接分发消息
      */
 	private void queueMessage(Message m) {
 		if (startupMessage != null) {
@@ -152,6 +155,8 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
         // 必须要找主线程才会将数据传递出去 --- 划重点
         if (Thread.currentThread() == Looper.getMainLooper().getThread()) {
 			Log.i("ccccccccccccccc","javascriptCommand=="+javascriptCommand);
+			//以javascript开头的url 调用js中对应的方法
+			//javascriptCommand==javascript:WebViewJavascriptBridge._handleMessageFromNative('{\"callbackId\":\"JAVA_CB_1_2327\",\"data\":\"{\\\"location\\\":{\\\"address\\\":\\\"SDU\\\"},\\\"name\\\":\\\"大头鬼\\\"}\",\"handlerName\":\"functionInJs\"}');
             this.loadUrl(javascriptCommand);
         }
     }
@@ -166,7 +171,7 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 				@Override
 				public void onCallBack(String data) {
 					// deserializeMessage 反序列化消息
-					/*这里是真正的回掉 h5向js发送消息  最后的回掉*/
+					/*这里是真正的回掉 h5向java发送消息  最后的回掉*/
 					List<Message> list = null;
 					try {
 						list = Message.toArrayList(data);
@@ -226,6 +231,7 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 	}
 
      /*第一次过来只是绑定returnCallback*/
+     /*这里自我感觉绕远了  没看懂为什么 为什么不直接获取数据 直接调回调方法 而是饶了一圈 重新调用*/
 	public void loadUrl(String jsUrl, CallBackFunction returnCallback) {
 		this.loadUrl(jsUrl);
         // 添加至 Map<String, CallBackFunction>
@@ -260,9 +266,9 @@ public class BridgeWebView extends WebView implements WebViewJavascriptBridge {
 	/**
 	 * call javascript registered handler
 	 * 调用javascript处理程序注册
-     * @param handlerName handlerName
-	 * @param data data
-	 * @param callBack CallBackFunction
+     * @param handlerName handlerName  js注册的handlerName
+	 * @param data data  传递数据 参数
+	 * @param callBack CallBackFunction js调用的回调
 	 */
 	public void callHandler(String handlerName, String data, CallBackFunction callBack) {
         doSend(handlerName, data, callBack);
